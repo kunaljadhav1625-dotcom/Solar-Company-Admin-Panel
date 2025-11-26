@@ -1,0 +1,1505 @@
+solar company admin management syatem cha project karcha ahe mala web basic  postgres cha database use karcha html,css,php ,pgsql,fetatures dashboard create kar registar,admin login page,logoutadmin,bill gendrate ,system,shop information,footer  madi shop address,Gmail id,mobile number, contact us section,admin all products edit karu shakto,stoack madun projects selct kalae var bill genfdratr jale paja
+solar-admin/
+├── includes/                # common files
+│   ├── db.php               # PostgreSQL connection
+│   ├── auth.php             # session check, require_login()
+│   ├── header.php           # top menu bar (Dashboard, Products, etc.)
+│   ├── footer.php           # shop info, contact details
+│
+├── public/                  # all visible pages
+│   ├── login.php            # Admin login page (first page)
+│   ├── logout.php           # logout, destroy session
+│   ├── dashboard.php        # main dashboard after login
+│   │
+│   ├── products.php         # product list + stock qty
+│   ├── product_add.php      # add new product
+│   ├── product_edit.php     # edit product info/stock
+│   │
+│   ├── projects.php         # project list
+│   ├── project_add.php      # create new project (link with client)
+│   │
+│   ├── generate_bill.php    # select project + products → generate bill
+│   ├── view_bill.php        # view single bill details
+│   ├── bills.php            # list of all generated bills
+│   │
+│   ├── clients.php          # client list
+│   ├── client_add.php       # add client
+│   │
+│   ├── contact.php          # contact us form (optional, footer info always visible)
+│   │
+│   ├── css/
+│   │   └── style.css        # design for all pages
+│   └── js/                  # if any scripts
+│
+└── sql/
+    └── schema.sql           # database schema (tables)
+
+🔑 Login Page (login.php)
+
+Fields: Email, Password
+
+Button: Login
+
+जर चुकीचं असेल → error message
+
+Login झाल्यावर → redirect dashboard.php
+
+📊 Dashboard (dashboard.php)
+
+Top area → Welcome Admin Name
+
+Cards / Boxes:
+
+Total Products
+
+Total Clients
+
+Total Projects
+
+Total Bills
+
+Low Stock Alerts
+
+Recent Activity Table:
+
+Last 5 bills (Client, Date, Amount)
+
+Navigation Menu (Header):
+
+Dashboard | Products | Projects | Clients | Bills | Generate Bill | Logout
+
+📦 Products (products.php)
+
+Table:
+| SKU | Product Name | Description | Unit Price | Stock Qty | Actions (Edit/Delete) |
+
+Buttons:
+
+Add Product → product_add.php
+
+Edit Product → product_edit.php?id=X
+
+➕ Product Add (product_add.php)
+
+Form:
+
+SKU
+
+Name
+
+Description
+
+Unit Price
+
+Initial Stock Quantity
+
+Save
+
+✏ Product Edit (product_edit.php)
+
+Form auto-filled (from DB):
+
+Name
+
+Description
+
+Unit Price
+
+Stock Qty (update allowed)
+
+Save Changes
+
+🧑 Clients (clients.php)
+
+Table:
+| Name | Email | Phone | Address | Actions (Edit/Delete) |
+
+Button:
+
+Add Client → client_add.php
+
+➕ Client Add (client_add.php)
+
+Form:
+
+Name
+
+Email
+
+Phone
+
+Address
+
+Save
+
+📁 Projects (projects.php)
+
+Table:
+| Project Name | Client | Created Date | Actions (View/Edit/Delete) |
+
+Button:
+
+Add Project → project_add.php
+
+➕ Project Add (project_add.php)
+
+Form:
+
+Project Name
+
+Select Client (dropdown)
+
+Save
+
+🧾 Generate Bill (generate_bill.php)
+
+Form:
+
+Select Project (dropdown)
+
+Auto-fill Client info
+
+Add multiple Product rows → (Product dropdown + Qty input)
+
+Button: Add Another Product
+
+Show Total Calculation
+
+Generate Bill → Save in DB, Deduct Stock
+
+📑 Bills List (bills.php)
+
+Table:
+| Bill No | Client | Project | Date | Amount | View |
+
+Click "View" → view_bill.php?id=X
+
+📄 View Bill (view_bill.php)
+
+Bill Header: Bill No, Date, Client Info, Project
+
+Table: Product | Qty | Unit Price | Line Total
+
+Total Amount (bottom)
+
+Print / Download option
+
+📞 Contact Page (contact.php)
+
+Shop Address
+
+Gmail ID
+
+Mobile Number
+
+Social Links (FB, Instagram)
+
+Optional: Message Form (Name, Email, Message → save in DB or mail)
+
+🔚 Footer (footer.php) – प्रत्येक पेजवर
+Shop Address: Shop No. X, Market Road, City
+Email: company@gmail.com | Phone: +91-XXXXXXXXXX
+Follow Us: Instagram | Facebook//Index1.php
+<?php
+// index.php - Main Login Page
+session_start();
+
+// If already logged in, redirect to dashboard
+if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
+    header('Location: admin-dashboard.php');
+    exit;
+}
+
+// Get any messages from URL
+$message = isset($_GET['message']) ? htmlspecialchars($_GET['message']) : '';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Energy Solutions - Admin Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #f7971e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 10px 30px rgba(247, 151, 30, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        } */
+
+        .company-name {
+            color: #1e3c72;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .company-tagline {
+            color: #2a5298;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .admin-title {
+            color: #f7971e;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .login-form {
+            margin-top: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #1e3c72;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #f7971e;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(247, 151, 30, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #adb5bd;
+        }
+
+        .form-group .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 2.3rem;
+            color: #2a5298;
+            font-size: 1.1rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 2.3rem;
+            cursor: pointer;
+            color: #2a5298;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: #f7971e;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            color: #2a5298;
+        }
+
+        .remember-me input {
+            margin-right: 0.5rem;
+            width: auto;
+        }
+
+        .forgot-link {
+            color: #f7971e;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: #e6830c;
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .login-btn:hover::before {
+            left: 100%;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(30, 60, 114, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .security-note {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e1e5e9;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .demo-credentials {
+            background: linear-gradient(45deg, #e3f2fd, #f3e5f5);
+            border: 1px solid #b39ddb;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .demo-credentials h4 {
+            color: #1e3c72;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .demo-credentials p {
+            margin: 0.3rem 0;
+            color: #2a5298;
+        }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .alert-error {
+            background: #fee;
+            color: #c53030;
+            border: 1px solid #fed7d7;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #38a169;
+            border: 1px solid #c6f6d5;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #2a5298;
+            font-size: 0.9rem;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e1e5e9;
+            border-top: 2px solid #f7971e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            .company-name {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="solar-bg"></div>
+    
+    <div class="login-container">
+        <div class="company-header">
+            <div class="company-logo">
+                <span class="logo-icon">☀️</span>
+            </div>
+            <h1 class="company-name">SolarTech Pro</h1>
+            <p class="company-tagline">Powering Tomorrow with Clean Energy</p>
+            <h2 class="admin-title">Admin Control Panel</h2>
+        </div>
+
+        <!-- <div class="demo-credentials">
+            <h4>🔐 Demo Login Credentials:</h4>
+            <p><strong>Username:</strong> admin@solartech.com</p>
+            <p><strong>Password:</strong> solar123</p>
+        </div> -->
+
+        <form class="login-form" id="loginForm">
+            <div class="alert alert-error" id="errorAlert"></div>
+            <div class="alert alert-success" id="successAlert"></div>
+            
+            <?php if ($message): ?>
+            <div class="alert alert-error show">
+                <?php echo $message; ?>
+            </div>
+            <?php endif; ?>
+            
+            <div class="loading" id="loadingIndicator">Authenticating...</div>
+            
+            <div class="form-group">
+                <label for="username">Username / Email Address</label>
+                <span class="input-icon">👤</span>
+                <input type="text" id="username" name="username" placeholder="Enter your username or email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <span class="input-icon">🔒</span>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                <span class="password-toggle" onclick="togglePassword()">👁️</span>
+            </div>
+            
+            <div class="remember-forgot">
+                <label class="remember-me">
+                    <input type="checkbox" name="remember" id="remember">
+                    Remember me
+                </label>
+                <a href="#" class="forgot-link">Forgot Password?</a>
+            </div>
+            
+            <button type="submit" class="login-btn" id="loginButton">
+                Access Admin Dashboard
+            </button>
+        </form>
+
+        <div class="security-note">
+            🔐 This is a secure admin area. All activities are logged and monitored.
+        </div>
+    </div>
+
+    <script>
+        // Password visibility toggle
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.querySelector('.password-toggle');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
+        }
+
+        // Form submission handling
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const remember = document.getElementById('remember').checked;
+            const loginButton = document.getElementById('loginButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorAlert = document.getElementById('errorAlert');
+            const successAlert = document.getElementById('successAlert');
+            
+            // Hide previous alerts
+            errorAlert.style.display = 'none';
+            successAlert.style.display = 'none';
+            errorAlert.classList.remove('show');
+            successAlert.classList.remove('show');
+            
+            // Basic validation
+            if (!username || !password) {
+                showError('Please fill in all fields.');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters long.');
+                return;
+            }
+            
+            // Show loading state
+            loginButton.style.display = 'none';
+            loadingIndicator.style.display = 'block';
+            loginButton.disabled = true;
+            
+            // Prepare form data
+            const formData = {
+                username: username,
+                password: password,
+                remember: remember
+            };
+            
+            // Send login request
+            fetch('login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.message || 'Login successful! Redirecting to dashboard...');
+                    
+                    // Store login info in localStorage for frontend
+                    localStorage.setItem('adminLoggedIn', 'true');
+                    localStorage.setItem('adminUsername', data.data?.user?.email || username);
+                    
+                    // Redirect after delay
+                    setTimeout(() => {
+                        window.location.href = data.data?.redirect || 'admin-dashboard.php';
+                    }, 1500);
+                } else {
+                    showError(data.message || 'Login failed. Please try again.');
+                    resetLoginForm();
+                }
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                showError('Network error. Please check your connection and try again.');
+                resetLoginForm();
+            });
+        });
+        
+        function showError(message) {
+            const errorAlert = document.getElementById('errorAlert');
+            errorAlert.textContent = message;
+            errorAlert.style.display = 'block';
+            errorAlert.classList.add('show');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                errorAlert.style.display = 'none';
+                errorAlert.classList.remove('show');
+            }, 5000);
+        }
+        
+        function showSuccess(message) {
+            const successAlert = document.getElementById('successAlert');
+            successAlert.textContent = message;
+            successAlert.style.display = 'block';
+            successAlert.classList.add('show');
+        }
+        
+        function resetLoginForm() {
+            const loginButton = document.getElementById('loginButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            loginButton.style.display = 'block';
+            loadingIndicator.style.display = 'none';
+            loginButton.disabled = false;
+        }
+        
+        // Auto-fill demo credentials on logo click
+        document.querySelector('.company-logo').addEventListener('click', function() {
+            document.getElementById('username').value = 'admin@solartech.com';
+            document.getElementById('password').value = 'solar123';
+        });
+        
+        // Input validation feedback
+        document.getElementById('username').addEventListener('input', function() {
+            this.style.borderColor = this.value.trim() ? '#28a745' : '#e1e5e9';
+        });
+        
+        document.getElementById('password').addEventListener('input', function() {
+            this.style.borderColor = this.value.length >= 6 ? '#28a745' : '#dc3545';
+        });
+        
+        // Input animation effects
+        document.querySelectorAll('.form-group input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+        
+        // Check if already logged in (from localStorage)
+        if (localStorage.getItem('adminLoggedIn') === 'true') {
+            // Verify with server
+            fetch('admin-dashboard.php', {
+                method: 'HEAD'
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = 'admin-dashboard.php';
+                } else {
+                    // Clear invalid login state
+                    localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('adminUsername');
+                }
+            })
+            .catch(error => {
+                console.log('Session verification failed:', error);
+            });
+        }
+    </script>
+</body>
+</html>
+<style>
+        /* Animated solar panels background */
+        .solar-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: 
+                radial-gradient(circle at 20% 20%, #ffd700 2px, transparent 2px),
+                radial-gradient(circle at 80% 80%, #ffd700 2px, transparent 2px),
+                radial-gradient(circle at 40% 60%, #ffd700 1px, transparent 1px);
+            background-size: 100px 100px, 150px 150px, 80px 80px;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(1deg); }
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .company-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .company-logo {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(45deg, #f7971e, #ffd200);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .company-logo:hover {
+            transform: scale(1.1);
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+        }
+        </style>
+
+
+//Addimin-Dashboard.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SolarTech Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #f7971e 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .company-logo {
+            width: 55px;
+            height: 55px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .company-info h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .company-info p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: rgba(255,255,255,0.15);
+            padding: 0.7rem 1.2rem;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .user-profile:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(45deg, #f7971e, #ffd200);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .logout-btn {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.4);
+            color: white;
+            padding: 0.7rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: rgba(231, 76, 60, 0.6);
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            background: white;
+            padding: 0 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 1.2rem 1.5rem;
+            text-decoration: none;
+            color: #4a5568;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: #1e3c72;
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.05), rgba(247, 151, 30, 0.05));
+            border-bottom-color: #f7971e;
+        }
+
+        .nav-icon {
+            font-size: 1.1rem;
+        }
+
+        /* Main Content Layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .page-title {
+            font-size: 2.2rem;
+            color: #1e3c72;
+            font-weight: 700;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #f7971e, #ffd200);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.9), rgba(42, 82, 152, 0.9)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><pattern id="solar" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="3" fill="rgba(255,215,0,0.1)"/></pattern></defs><rect width="1200" height="800" fill="url(%23solar)"/></svg>');
+            background-size: cover;
+            background-position: center;
+            padding: 4rem 2rem;
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            text-align: center;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.15);
+            padding: 1.5rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #ffd200;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Dashboard Cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .card-content {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .card-action {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Footer */
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 3rem 0 1.5rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: #f7971e;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .footer-section p,
+        .footer-section li {
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: #f7971e;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-link {
+            width: 40px;
+            height: 40px;
+            background: rgba(247, 151, 30, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background: #f7971e;
+            transform: scale(1.1);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            opacity: 0.7;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-content {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .main-container {
+                padding: 1rem;
+            }
+
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="company-logo">☀️</div>
+                <div class="company-info">
+                    <h1>SolarTech Pro</h1>
+                    <p>Admin Dashboard</p>
+                </div>
+            </div>
+            <div class="user-section">
+                <div class="user-profile">
+                    <div class="user-avatar">👤</div>
+                    <div>
+                        <div id="adminName">Admin User</div>
+                        <small>System Administrator</small>
+                    </div>
+                </div>
+                <a href="#" class="logout-btn" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-item">
+                <a href="#dashboard" class="nav-link active" onclick="showSection('dashboard')">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#projects" class="nav-link" onclick="showSection('projects')">
+                    <i class="fas fa-solar-panel nav-icon"></i>
+                    Projects
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#stock" class="nav-link" onclick="showSection('stock')">
+                    <i class="fas fa-boxes nav-icon"></i>
+                    Stock
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#employees" class="nav-link" onclick="showSection('employees')">
+                    <i class="fas fa-users nav-icon"></i>
+                    Employees
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#reports" class="nav-link" onclick="showSection('reports')">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    Reports
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#settings" class="nav-link" onclick="showSection('settings')">
+                    <i class="fas fa-cog nav-icon"></i>
+                    Settings
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="content-section">
+            <div class="page-header">
+                <h1 class="page-title">Welcome to SolarTech Pro Dashboard</h1>
+                <div class="page-actions">
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        New Project
+                    </a>
+                    <a href="#" class="btn btn-secondary">
+                        <i class="fas fa-download"></i>
+                        Generate Report
+                    </a>
+                </div>
+            </div>
+
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h2 class="hero-title">Powering Tomorrow with Clean Energy</h2>
+                    <p class="hero-subtitle">Leading the renewable energy revolution with innovative solar solutions for a sustainable future</p>
+                    
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">150+</div>
+                            <div class="stat-label">Projects Completed</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">50MW</div>
+                            <div class="stat-label">Total Capacity</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">1000+</div>
+                            <div class="stat-label">Happy Customers</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹500Cr</div>
+                            <div class="stat-label">Revenue Generated</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Cards -->
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(45deg, #1e3c72, #2a5298);">
+                            <i class="fas fa-solar-panel"></i>
+                        </div>
+                        <h3 class="card-title">Active Projects</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Monitor and manage all ongoing solar installation projects. Track progress, deadlines, and resource allocation.</p>
+                        <div style="margin-top: 1rem; color: #1e3c72; font-weight: 600;">
+                            <span style="font-size: 1.5rem;">25</span> Active Projects
+                        </div>
+                    </div>
+                    <div class="card-action">
+                        <a href="#projects" class="btn btn-primary" onclick="showSection('projects')">
+                            View All Projects
+                        </a>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(45deg, #f7971e, #ffd200);">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <h3 class="card-title">Inventory Management</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Track solar panels, inverters, batteries, and other equipment. Monitor stock levels and manage suppliers.</p>
+                        <div style="margin-top: 1rem; color: #f7971e; font-weight: 600;">
+                            <span style="font-size: 1.5rem;">1,250</span> Items in Stock
+                        </div>
+                    </div>
+                    <div class="card-action">
+                        <a href="#stock" class="btn btn-secondary" onclick="showSection('stock')">
+                            Manage Inventory
+                        </a>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(45deg, #28a745, #20c997);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="card-title">Team Management</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Manage your workforce including engineers, technicians, sales team, and administrative staff.</p>
+                        <div style="margin-top: 1rem; color: #28a745; font-weight: 600;">
+                            <span style="font-size: 1.5rem;">45</span> Active Employees
+                        </div>
+                    </div>
+                    <div class="card-action">
+                        <a href="#employees" class="btn" style="background: linear-gradient(45deg, #28a745, #20c997); color: white;" onclick="showSection('employees')">
+                            View Team
+                        </a>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(45deg, #6f42c1, #e83e8c);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="card-title">Analytics & Reports</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Comprehensive business analytics, financial reports, project performance metrics, and growth insights.</p>
+                        <div style="margin-top: 1rem; color: #6f42c1; font-weight: 600;">
+                            <span style="font-size: 1.5rem;">15%</span> Growth This Month
+                        </div>
+                    </div>
+                    <div class="card-action">
+                        <a href="#reports" class="btn" style="background: linear-gradient(45deg, #6f42c1, #e83e8c); color: white;" onclick="showSection('reports')">
+                            View Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Other sections will be loaded dynamically -->
+        <div id="other-sections" style="display: none;">
+            <!-- Content for other sections will be loaded here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3>SolarTech Pro</h3>
+                    <p>Leading provider of solar energy solutions, committed to creating a sustainable future through innovative renewable energy technologies.</p>
+                    <div class="social-links">
+                        <a href="https://facebook.com/solartechpro" class="social-link">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="https://instagram.com/solartechpro" class="social-link">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="https://twitter.com/solartechpro" class="social-link">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://linkedin.com/company/solartechpro" class="social-link">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="https://youtube.com/solartechpro" class="social-link">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Contact Information</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> Solar Energy Park, Sector 15, Gurgaon, Haryana 122001</li>
+                        <li><i class="fas fa-phone"></i> +91-9876543210</li>
+                        <li><i class="fas fa-envelope"></i> info@solartech.com</li>
+                        <li><i class="fas fa-globe"></i> www.solartech.com</li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Our Services</h3>
+
+
+                    <ul>
+                        <li><a href="#">Residential Solar Solutions</a></li>
+                        <li><a href="#">Commercial Solar Systems</a></li>
+                        <li><a href="#">Industrial Solar Projects</a></li>
+                        <li><a href="#">Solar Maintenance & Support</a></li>
+                        <li><a href="#">Energy Storage Solutions</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#dashboard" onclick="showSection('dashboard')">Dashboard</a></li>
+                        <li><a href="#projects" onclick="showSection('projects')">Projects</a></li>
+                        <li><a href="#stock" onclick="showSection('stock')">Inventory</a></li>
+                        <li><a href="#employees" onclick="showSection('employees')">Team</a></li>
+                        <li><a href="#reports" onclick="showSection('reports')">Reports
+
+
+mazya kad thoda code aahe tu tyat pan badal karu shakato s 

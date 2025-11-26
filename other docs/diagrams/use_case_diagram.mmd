@@ -1,0 +1,27 @@
+%% Use Case Diagram for Technosky Solar System (Mermaid)
+%% Save as .mmd or open with a Mermaid renderer
+
+flowchart TD
+    actor_Admin([Admin])
+
+    subgraph System [Technosky Solar System]
+      Login["Login / Authenticate"]
+      ManageClients["Manage Clients\n(Create / Edit / Delete)"]
+      ManageProducts["Manage Products\n(Inventory)"]
+      ManageProjects["Manage Projects\n(Assign client)"]
+      CreateBills["Create Bills\n(With line items)"]
+      ViewReports["View Reports"]
+      Settings["System Settings"]
+    end
+
+    actor_Admin --> Login
+    actor_Admin --> ManageClients
+    actor_Admin --> ManageProducts
+    actor_Admin --> ManageProjects
+    actor_Admin --> CreateBills
+    actor_Admin --> ViewReports
+    actor_Admin --> Settings
+
+%% Notes:
+%% - Paste into mermaid.live or use VS Code Mermaid preview to render.
+%% - You can export PNG/SVG from the renderer.

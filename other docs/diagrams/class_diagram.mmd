@@ -1,0 +1,85 @@
+%% Class Diagram for Technosky Solar System (Mermaid)
+%% Save as .mmd or open with a Mermaid renderer
+
+classDiagram
+    class Database {
+        +PDO connection
+        +connect()
+        +query(sql)
+    }
+
+    class Auth {
+        +login(email, password)
+        +logout()
+        +isAuthenticated()
+    }
+
+    class Client {
+        +id
+        +name
+        +email
+        +phone
+        +address
+        +create()
+        +update()
+        +delete()
+        +find(id)
+    }
+
+    class Product {
+        +id
+        +sku
+        +name
+        +unit_price
+        +stock_quantity
+        +create()
+        +update()
+        +adjustStock(delta)
+    }
+
+    class Project {
+        +id
+        +name
+        +client_id
+        +status
+        +create()
+        +assignClient(clientId)
+    }
+
+    class Bill {
+        +id
+        +bill_no
+        +project_id
+        +client_id
+        +bill_date
+        +total_amount
+        +create()
+        +addItem(BillItem)
+        +calculateTotal()
+    }
+
+    class BillItem {
+        +id
+        +bill_id
+        +product_id
+        +quantity
+        +unit_price
+        +line_total
+        +calculateLineTotal()
+    }
+
+    Database <|-- Auth
+    Database <|-- Client
+    Database <|-- Product
+    Database <|-- Project
+    Database <|-- Bill
+    Database <|-- BillItem
+
+    Client "1" -- "0..*" Project : "has"
+    Project "1" -- "0..*" Bill : "generates"
+    Client "1" -- "0..*" Bill : "billed_to"
+    Bill "1" -- "0..*" BillItem : "contains"
+    Product "1" -- "0..*" BillItem : "used_in"
+
+%% Notes:
+%% - Paste into mermaid.live or use VS Code Mermaid preview to render and export PNG/SVG.

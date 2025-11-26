@@ -1,0 +1,68 @@
+%% ER Diagram for Technosky Solar System (Mermaid)
+%% Save as .mmd or paste into a Mermaid live editor / VS Code Mermaid preview
+
+erDiagram
+    ADMINS {
+        INT id PK "Primary key"
+        VARCHAR email "Unique admin email"
+        VARCHAR password "Password hash"
+        VARCHAR name
+        TIMESTAMP created_at
+    }
+
+    CLIENTS {
+        INT id PK
+        VARCHAR name
+        VARCHAR email
+        VARCHAR phone
+        TEXT address
+        TIMESTAMP created_at
+    }
+
+    PRODUCTS {
+        INT id PK
+        VARCHAR sku "Unique product code"
+        VARCHAR name
+        TEXT description
+        DECIMAL unit_price
+        INT stock_quantity
+        TIMESTAMP created_at
+    }
+
+    PROJECTS {
+        INT id PK
+        VARCHAR name
+        INT client_id FK
+        DATE created_date
+        VARCHAR status
+    }
+
+    BILLS {
+        INT id PK
+        VARCHAR bill_no "Unique bill number"
+        INT project_id FK
+        INT client_id FK
+        DATE bill_date
+        DECIMAL total_amount
+        TIMESTAMP created_at
+    }
+
+    BILL_ITEMS {
+        INT id PK
+        INT bill_id FK
+        INT product_id FK
+        INT quantity
+        DECIMAL unit_price
+        DECIMAL line_total
+    }
+
+    %% Relationships
+    CLIENTS ||--o{ PROJECTS : "has"
+    PROJECTS ||--o{ BILLS : "generates"
+    CLIENTS ||--o{ BILLS : "billed_to"
+    BILLS ||--o{ BILL_ITEMS : "contains"
+    PRODUCTS ||--o{ BILL_ITEMS : "used_in"
+
+%% Notes:
+%% - Save this file and open it with a Mermaid renderer (VS Code extension "Markdown Preview Mermaid Support" or mermaid.live).
+%% - To export to PNG/SVG, use the mermaid CLI or a renderer extension.

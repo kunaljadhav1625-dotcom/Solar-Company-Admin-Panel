@@ -1,0 +1,57 @@
+
+First, let's design the database tables. Create a database named solar_company.
+
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) CHECK (role IN ('admin', 'manager', 'technician')) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    address TEXT,
+    city VARCHAR(50),
+    state VARCHAR(50),
+    zip_code VARCHAR(20),
+    energy_requirements VARCHAR(100),
+    roof_type VARCHAR(50),
+    roof_size VARCHAR(50),
+    created_by INT REFERENCES users(user_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE projects (
+    project_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customers(customer_id) ON DELETE CASCADE,
+    project_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    system_size_kw DECIMAL(8,2),
+    estimated_cost DECIMAL(10,2),
+    actual_cost DECIMAL(10,2),
+    status VARCHAR(20) CHECK (status IN ('quoted', 'approved', 'in_progress', 'completed', 'cancelled')) DEFAULT 'quoted',
+    start_date DATE,
+    completion_date DATE,
+    assigned_technician INT REFERENCES users(user_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE invoices (
+    invoice_id SERIAL PRIMARY KEY,
+    project_id INT REFERENCES projects(project_id) ON DELETE CASCADE,
+    invoice_number VARCHAR(50) UNIQUE NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    issue_date DATE NOT NULL,
+    due_date DATE NOT NULL,
+    status VARCHAR(20) CHECK (status IN ('draft', 'sent', 'paid', 'overdue')) DEFAULT 'draft',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
