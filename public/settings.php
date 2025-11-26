@@ -92,13 +92,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_company'])) {
                 <div class="form-group">
                     <label class="form-label">Full Name</label>
                     <input type="text" name="name" class="form-control" 
-                           value="<?php echo htmlspecialchars($admin['name']); ?>" required>
+                           value="<?php echo htmlspecialchars($admin['name'] ?? ''); ?>" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Email Address</label>
                     <input type="email" name="email" class="form-control" 
-                           value="<?php echo htmlspecialchars($admin['email']); ?>" required>
+                           value="<?php echo htmlspecialchars($admin['email'] ?? ''); ?>" required>
                 </div>
                 
                 <div class="form-group">
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_company'])) {
                     <input type="tel" name="phone" class="form-control" 
                            value="<?php echo htmlspecialchars($admin['phone'] ?? ''); ?>">
                 </div>
-                
+        
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Update Profile
                 </button>

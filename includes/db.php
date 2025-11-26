@@ -2,7 +2,7 @@
 // includes/db.php - PostgreSQL Database Connection
 $host = "localhost";
 $port = "5432";
-$dbname = "solar_company";
+$dbname = "vikas";
 $user = "postgres";
 $password = "root";
 

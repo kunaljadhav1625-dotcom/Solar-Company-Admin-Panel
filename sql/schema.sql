@@ -103,6 +103,8 @@ CREATE TABLE admins (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    role VARCHAR(50) DEFAULT 'System Administrator',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -137,8 +139,12 @@ CREATE TABLE projects (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     client_id INT NULL,
+    description TEXT,
     created_date DATE DEFAULT CURRENT_DATE,
+    start_date DATE,
+    end_date DATE,
     status project_status DEFAULT 'Active',
+    budget NUMERIC(15,2) DEFAULT 0.00,
     CONSTRAINT fk_projects_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
 );
 
@@ -163,6 +169,17 @@ CREATE TABLE bill_items (
     line_total NUMERIC(10,2) NOT NULL,
     CONSTRAINT fk_billitems_bill FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
     CONSTRAINT fk_billitems_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+);
+
+CREATE TABLE company_settings (
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    company_name VARCHAR(255) NOT NULL,
+    company_address TEXT,
+    company_phone VARCHAR(20),
+    company_email VARCHAR(255),
+    company_gst VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- ---------- SAMPLE DATA ----------

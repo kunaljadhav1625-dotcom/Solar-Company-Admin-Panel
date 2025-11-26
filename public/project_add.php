@@ -25,29 +25,53 @@ if (isset($_GET['id'])) {
 $clients = $pdo->query("SELECT * FROM clients ORDER BY name")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'];
-    $client_id = $_POST['client_id'];
-    $description = $_POST['description'];
+    $name = trim($_POST['name']);
+    $client_id = !empty($_POST['client_id']) ? (int)$_POST['client_id'] : null;
+    $description = trim($_POST['description']);
     $status = $_POST['status'];
-    $start_date = $_POST['start_date'];
-    $end_date = $_POST['end_date'];
-    $budget = $_POST['budget'];
+    $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+    $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+    $budget = !empty($_POST['budget']) ? (float)$_POST['budget'] : 0.00;
     
-    if ($is_edit) {
-        $stmt = $pdo->prepare("UPDATE projects SET name = ?, client_id = ?, description = ?, status = ?, start_date = ?, end_date = ?, budget = ? WHERE id = ?");
-        $success = $stmt->execute([$name, $client_id, $description, $status, $start_date, $end_date, $budget, $project_id]);
-        $message = "Project updated successfully";
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO projects (name, client_id, description, status, start_date, end_date, budget) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $success = $stmt->execute([$name, $client_id, $description, $status, $start_date, $end_date, $budget]);
-        $message = "Project added successfully";
+    // Validation
+    $error = '';
+    if (empty($name)) {
+        $error = "Project name is required";
+    } elseif (empty($status)) {
+        $error = "Status is required";
+    } elseif (!in_array($status, ['Active', 'Completed', 'On Hold', 'Cancelled'])) {
+        $error = "Invalid status selected";
+    } elseif ($budget < 0) {
+        $error = "Budget cannot be negative";
+    } elseif ($start_date && !strtotime($start_date)) {
+        $error = "Invalid start date format";
+    } elseif ($end_date && !strtotime($end_date)) {
+        $error = "Invalid end date format";
+    } elseif ($start_date && $end_date && strtotime($start_date) > strtotime($end_date)) {
+        $error = "End date must be after start date";
     }
     
-    if ($success) {
-        header("Location: projects.php?message=$message");
-        exit;
-    } else {
-        $error = "Failed to save project";
+    if (!$error) {
+        try {
+            if ($is_edit) {
+                $stmt = $pdo->prepare("UPDATE projects SET name = ?, client_id = ?, description = ?, status = ?, start_date = ?, end_date = ?, budget = ? WHERE id = ?");
+                $success = $stmt->execute([$name, $client_id, $description, $status, $start_date, $end_date, $budget, $project_id]);
+                $message = "Project updated successfully";
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO projects (name, client_id, description, status, start_date, end_date, budget) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $success = $stmt->execute([$name, $client_id, $description, $status, $start_date, $end_date, $budget]);
+                $message = "Project added successfully";
+            }
+            
+            if ($success) {
+                header("Location: projects.php?message=$message");
+                exit;
+            } else {
+                $error = "Failed to save project";
+            }
+        } catch (PDOException $e) {
+            $error = "Database error: " . $e->getMessage();
+        }
     }
 }
 ?>
@@ -96,10 +120,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label class="form-label">Status *</label>
                     <select name="status" class="form-control" required>
-                        <option value="Planning" <?php echo ($is_edit && $project['status'] == 'Planning') ? 'selected' : ''; ?>>Planning</option>
-                        <option value="In Progress" <?php echo ($is_edit && $project['status'] == 'In Progress') ? 'selected' : ''; ?>>In Progress</option>
+                        <option value="Active" <?php echo ($is_edit && $project['status'] == 'Active') ? 'selected' : ''; ?>>Active</option>
                         <option value="Completed" <?php echo ($is_edit && $project['status'] == 'Completed') ? 'selected' : ''; ?>>Completed</option>
                         <option value="On Hold" <?php echo ($is_edit && $project['status'] == 'On Hold') ? 'selected' : ''; ?>>On Hold</option>
+                        <option value="Cancelled" <?php echo ($is_edit && $project['status'] == 'Cancelled') ? 'selected' : ''; ?>>Cancelled</option>
                     </select>
                 </div>
                 
